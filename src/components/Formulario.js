@@ -1,6 +1,8 @@
 import React from "react";
 import { View, Text, StyleSheet, Image, TextInput, TouchableOpacity } from 'react-native';
 import logoImagem from '../../assets/barra.png';
+import app from '../../firebase';
+import { Alert } from "react-native";
 
 export const FormularioVenda = ({ valorVendas }) => {
     return (
@@ -144,7 +146,7 @@ export const FormularioFilterVenda = () => {
     );
 };
 
-export const FormularioFilterProduto = () => {
+export const FormularioFilterProduto = ({ onChangeText }) => {
     return (
         <View style={styles.inputContainer}>
             <Text style={styles.label}>Senha</Text>
@@ -156,6 +158,7 @@ export const FormularioFilterProduto = () => {
                 placeholder='Buscar por descrição. código...'
                 placeholderTextColor="#cccccc"
                 secureTextEntry={false}
+                onChangeText={onChangeText}
             />
             <TouchableOpacity style={styles.buttonCadastro}>
                 <Text style={styles.buttonCadastroText}>Filtrar</Text>
@@ -222,6 +225,12 @@ export const FormularioPanelProduto = ({ dsProduto, idVenda }) => {
         </View>
       );
 };
+
+export const MessageAlert = (titulo, message) => {
+    Alert.alert(titulo, message, [
+        { text: 'OK', }
+    ]);
+}
 
 const styles = StyleSheet.create({
     produtoAtivo: {

@@ -1,34 +1,148 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity } from 'react-native';
-import { CustomText } from '../components/Text'
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View} from 'react-native';
+import { ApelidoNegocioTextInput, BotaoCadastroProduto, CnpjTextInput, CustomText, NomeTextInput } from '../components/Text'
+import { app } from '../../firebase';
+import { getDatabase, ref, set, push, runTransaction } from 'firebase/database';
+import { getAuth } from 'firebase/auth';
+import { MessageAlert } from '../components/Formulario';
+import { useRoute } from '@react-navigation/native';
+
+const BUSINESS_REGISTERED_SUCESSFULLY = 'Negócio registrado com sucesso'
+const CANNOT_CREATE_BUSINESS_WITHOUT_ACCOUNT = 'Faça login para poder criar um negócio'
 
 export default function Negocio() {
-    return (
+  const [apelido, setApelido] = useState('');
+  const [cnpj, setCnpj] = useState('');
+  const [nome, setNome] = useState('');  
+  const [negocio, setNegocio] = useState(null);  
+  
+  const db = getDatabase(app);
+  const auth = getAuth(app);
+
+  const route = useRoute();
+
+  useEffect(() => {
+    if (route.params && route.params.produto) {
+      const { negocio } = route.params,
+      { 
+        apelido,
+        cnpj,
+        nomeSobrenome
+      } = negocio;
+
+      setApelido(apelido);
+      setCnpj(cnpj);
+      setNome(nomeSobrenome);
+    }
+  }, [route.params]);
+
+  const clearState = () => {
+    setApelido('');
+    setCnpj('');
+    setNome('');
+  }
+
+  const handleEditarNegocio = async () => {
+    try {
+      const negocioRef = ref(db, `negocios/${negocio.id}`);
+    
+      console.log(apelido);
+      console.log(cnpj);
+      console.log(nome);
+      console.log(negocio);
+
+      const negocioAtualizado = {
+        apelido: apelido,
+        userId: negocio.userId,
+        idNegocio: negocio.idNegocio,
+        nomeSobrenome: nome,
+        cnpj: cnpj
+      }
+
+
+      console.log('NEGOCIO ATUALIZADO ' + negocio);
+
+      await update(negocioRef, negocioAtualizado);
+
+      MessageAlert('Sucesso', 'Negócio atualizado com sucesso!');
+
+      clearState();
+    } catch (error) {
+      console.log(error);
+      MessageAlert('Erro', 'Erro ao atualizar o negócio');
+    }
+  } 
+
+  const handleCadastroNegocio = async () => {
+
+    try {
+
+        const user = auth && auth.currentUser ? auth.currentUser : null;
+        
+        console.log(user);
+
+        if (user) {
+
+          const counterNegocioRef = ref(db, 'negocioCounter');
+
+          let newNegocioId;
+
+          await runTransaction(counterNegocioRef, (currentValue) => {
+            if (currentValue === null) {
+              return 1;
+            }
+            return currentValue + 1;
+          }).then((transactionResult) => {
+            if (transactionResult.committed) {
+              newNegocioId = transactionResult.snapshot.val();
+            } else {
+              throw new Error('Transaction not commited');
+            }
+          });
+
+          console.log('negocio' + newNegocioId);
+
+          const negocioRef = ref(db, 'negocios');
+          const newProdutoRef = push(negocioRef);
+
+          await set(newProdutoRef, {
+            idNegocio: newNegocioId,
+            apelido: apelido,
+            userId: user.uid,
+            cnpj: cnpj,
+            nomeSobrenome: nome
+          });
+
+          MessageAlert('Sucesso', BUSINESS_REGISTERED_SUCESSFULLY);
+
+          clearState();
+        } else {
+          MessageAlert('Erro', CANNOT_CREATE_BUSINESS_WITHOUT_ACCOUNT);
+        }
+    } catch (error) {
+      
+      console.log(error);
+      MessageAlert('Erro', error.message);
+    }
+  }
+
+  return (
     <View style={styles.container}>
 
         <CustomText style={{marginBottom: 40}}>Criar negócio</CustomText>
 
-        <TextInput
-            style={styles.input}
-            placeholder='Apelido'
-            placeholderTextColor="#cccccc"
-        />
+        <ApelidoNegocioTextInput value={apelido} onChangeText={setApelido}></ApelidoNegocioTextInput>
 
-        <TextInput
-            style={styles.input}
-            placeholder='CNPJ'
-            placeholderTextColor="#cccccc"
-        />
+        <CnpjTextInput value={cnpj} onChangeText={setCnpj}></CnpjTextInput>
 
-        <TextInput
-            style={styles.input}
-            placeholder='Nome e sobrenome'
-            placeholderTextColor="#cccccc"
-        />
+        <NomeTextInput value={nome} onChangeText={setNome}></NomeTextInput>
 
-        <TouchableOpacity style={styles.buttonCadastro}>
-            <Text style={styles.buttonCadastroText}>Salvar negócio</Text>
-        </TouchableOpacity>
+        {negocio ? (
+        <BotaoCadastroProduto onPress={handleEditarNegocio} text={"Atualizar negócio"} />
+      ) : (
+        <BotaoCadastroProduto text={'Salvar negócio'} onPress={handleCadastroNegocio}></BotaoCadastroProduto>
+      )}
+
     </View>
   );
 }

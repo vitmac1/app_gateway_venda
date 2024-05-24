@@ -54,13 +54,13 @@ export default function DrawerRoutes() {
                 }}
             />
 
-            <Drawer.Screen
+            {/* <Drawer.Screen
                 name='financa'
                 component={Financa}
                 options={{
                     drawerLabel: 'Financa'
                 }}
-            />
+            /> */}
 
             <Drawer.Screen
                 name='produto'

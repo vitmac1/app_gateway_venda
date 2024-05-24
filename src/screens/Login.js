@@ -1,61 +1,99 @@
-import React from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView } from 'react-native';
-import { CustomText, TermoUsoText } from '../components/Text'
-import { ButtonGroup } from '../components/ButtonGroup'
-import { Logo } from '../components/Logo'
+import React, { useState } from 'react';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity } from 'react-native';
+import { CustomText, TermoUsoText } from '../components/Text';
+import { Logo } from '../components/Logo';
+import { ButtonGroup } from '../components/ButtonGroup';
+import { Flag } from '../components/Flag';
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { MessageAlert } from '../components/Formulario';
+import { useNavigation } from "@react-navigation/native";
+import { getDatabase } from 'firebase/database';
+import { app } from '../../firebase';
+import { ref, get } from 'firebase/database';
+
 
 export default function Login() {
+  const [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
+
+  const navigation = useNavigation();
+
+  const handleLogin = async () => {
+
+    try {
+      
+      const auth = getAuth(app);
+      const db = getDatabase(app);
+      
+      await signInWithEmailAndPassword(auth, email, senha);
+
+      const user = auth.currentUser;
+      const uid = user.uid;
+
+      console.log(uid);
+
+      const snapshot = await get(ref(db, `users/${uid}`));
+
+      const userData = snapshot.val();
+
+      console.log(userData); 
+
+      MessageAlert('Sucesso', 'Login realizado com sucesso');
+
+      navigation.navigate('dashboard', { user: userData });
+
+    } catch (error) {  
+
+      console.log(error);
+      MessageAlert('Erro', error.message);
+    }
+  }
+
   return (
-      <View style={styles.container}>
+    <View style={styles.container}>
         <View style={styles.header}>
             <Logo/>
         </View>
 
         <ButtonGroup/>
 
-        <CustomText>Nova conta</CustomText>
-
-
-        <TextInput
-            style={styles.input}
-            placeholder='Nome e sobrenome'
-            placeholderTextColor="black"
-        />
+        <CustomText style={{ paddingTop: 20, fontSize: 30}}>Acesse sua conta</CustomText>
 
         <TextInput
-            style={styles.input}
+            style={[
+                styles.input, 
+                { backgroundColor: '#F1F1F1' }
+            ]}
             placeholder='E-mail'
             placeholderTextColor="black"
+            placeholderStyle={{ fontSize: 16, paddingLeft: 10, paddingBottom: 30 }}
+            onChangeText={text => setEmail(text.toLowerCase())}
+            value={email}
         />
 
-        <TextInput
-            style={styles.input}
-            placeholder='+ 55'
-            placeholderTextColor="black"
-        />
+        <View style={styles.inputContainer}>
+            <Text style={styles.label}>Senha</Text>
+            <TextInput
+                style={[
+                styles.input,
+                { marginTop: 5 }
+                ]}
+                placeholder='Sua senha'
+                placeholderTextColor="#cccccc"
+                secureTextEntry={true}
+                onChangeText={setSenha}
+                value={senha}
+            />
+        </View>
 
-        <TextInput
-            style={styles.input}
-            placeholder='Senha'
-            placeholderTextColor="#cccccc"
-            secureTextEntry={true}
-        />
-
-        <TextInput
-            style={styles.input}
-            placeholder='Repetir senha'
-            placeholderTextColor="#cccccc"
-            secureTextEntry={true}
-        />
-
-        <TermoUsoText>
-            Ao criar conta, você confirma que leu e{"\n"}concorda com os <Text style={styles.underline}>termos de uso</Text> da Shiftway.
-        </TermoUsoText>
-
-        <TouchableOpacity style={styles.buttonCadastro}>
-            <Text style={styles.buttonCadastroText}>Criar conta grátis</Text>
+        <TouchableOpacity style={styles.buttonCadastro} onPress={handleLogin}>
+            <Text style={styles.buttonCadastroText}>Acessar minha conta</Text>
         </TouchableOpacity>
-        <Text style={{marginBottom:80}}></Text>
+
+        <Flag text="Lembrar-me"/>
+
+        <Text style={{marginBottom:150}}></Text>
+
     </View>
   );
 }
@@ -83,9 +121,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold', // Negrito
     fontSize: 20,
   },
-  selectedButton: {
-    backgroundColor: 'white', // Cinza mais escuro
-  },
   leftButton: {
     borderTopLeftRadius: 5, // Borda arredondada superior esquerda
     borderBottomLeftRadius: 5, // Borda arredondada inferior esquerda
@@ -93,10 +128,6 @@ const styles = StyleSheet.create({
   rightButton: {
     borderTopRightRadius: 5, // Borda arredondada superior direita
     borderBottomRightRadius: 5, // Borda arredondada inferior direita
-  },
-  // Estilo para a margem horizontal entre os botões
-  buttonSeparator: {
-    width: 10, // Largura da margem
   },
   input: {
     flexDirection: 'row', // Botões na mesma linha
@@ -108,7 +139,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     width: 350, // Largura do formulário
     height: 60,
-    marginTop: 20,
+    marginTop: 60,
     paddingLeft: 20,
     fontSize: 20
   },
@@ -129,5 +160,15 @@ const styles = StyleSheet.create({
   },
   underline: {
     textDecorationLine: 'underline',
+  },
+  inputContainer: {
+    alignItems: 'flex-start', // Alinhamento dos elementos à esquerda
+    marginTop: 30,
+    marginBottom: 20, // Espaçamento inferior entre os elementos
+  },
+  label: {
+    fontSize: 18, // Tamanho do texto
+    fontWeight: '300', // Peso da fonte
+    paddingLeft: 8,
   },
 });

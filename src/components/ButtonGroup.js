@@ -1,29 +1,32 @@
-import React, { useState }  from "react";
+import React, { useState } from "react";
 import { StyleSheet, View, TouchableOpacity, Text } from 'react-native';
+import { useNavigation } from "@react-navigation/native";
 
 export const ButtonGroup = () => {
-    const [selectedButton, setSelectedButton] = useState(null);
-    
+    const [selectedButton, setSelectedButton] = useState('login');
+    const navigation = useNavigation();
+
     const handlePress = (button) => {
         setSelectedButton(button);
+        navigation.navigate(button);
     };
 
     return (
         <View style={styles.buttonGroup}>
             <TouchableOpacity
-            style={[styles.button, selectedButton === 'login' && styles.selectedButton]}
-            onPress={() => handlePress('login', setSelectedButton)}
+                style={[styles.button, selectedButton === 'login']}
+                onPress={() => handlePress('login')}
             >
-            <Text style={styles.buttonText}>Login</Text>
+                <Text style={styles.buttonText}>Login</Text>
             </TouchableOpacity>
 
             <View style={styles.buttonSeparator}></View>
 
             <TouchableOpacity
-            style={[styles.button, selectedButton === 'createAccount' && styles.selectedButton]}
-            onPress={() => handlePress('createAccount', setSelectedButton)}
+                style={[styles.button, selectedButton === 'cadastro']}
+                onPress={() => handlePress('cadastro')}
             >
-            <Text style={styles.buttonText}>Nova Conta</Text>
+                <Text style={styles.buttonText}>Nova Conta</Text>
             </TouchableOpacity>
         </View>
     )
@@ -48,7 +51,7 @@ const styles = StyleSheet.create({
         borderRadius: 5,
     },
     selectedButton: {
-        backgroundColor: 'white', // Cinza mais escuro
+        backgroundColor: 'white', // Cor de fundo branca
     },
     buttonText: {
         color: 'black', // Cor do texto
